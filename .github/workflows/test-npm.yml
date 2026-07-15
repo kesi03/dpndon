@@ -18,7 +18,9 @@ jobs:
 
       - name: Setup pnpm
         if: matrix.pkg-manager == 'pnpm'
-        run: npm install -g pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.0.0 --activate
 
       - name: Install dpndon globally
         run: ${{ matrix.pkg-manager }} add -g @mockholm/dpndon
