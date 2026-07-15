@@ -10,7 +10,7 @@ const path = require("path");
 const { chmodSync, existsSync, mkdirSync } = fs;
 const { arch, platform } = process;
 
-const REPO = "dpndon/dpndon";
+const REPO = "kesi03/dpndon";
 const RELEASE_TAG = require("../package.json").version;
 
 const BINARY_NAME = platform === "win32" ? "dpndon.exe" : "dpndon";

@@ -1,84 +1,122 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version (patch, minor, major, or exact like 1.0.0)'
+        required: true
+        default: 'patch'
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        include:
-          - goos: linux
-            goarch: amd64
-            runner: ubuntu-latest
-          - goos: linux
-            goarch: arm64
-            runner: ubuntu-latest
-          - goos: darwin
-            goarch: amd64
-            runner: macos-latest
-          - goos: darwin
-            goarch: arm64
-            runner: macos-latest
-          - goos: windows
-            goarch: amd64
-            runner: windows-latest
-
-    runs-on: ${{ matrix.runner }}
+  release:
+    name: Build, Publish & Release
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v5
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
           go-version: "1.25"
 
-      - name: Build
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # ---- Version bump ----
+      - name: Bump version
+        id: version
+        run: |
+          INPUT="${{ inputs.version }}"
+
+          if [[ "$INPUT" == "patch" || "$INPUT" == "minor" || "$INPUT" == "major" ]]; then
+            npm version "$INPUT" --no-git-tag-version --workspace=npm
+          else
+            npm version "$INPUT" --no-git-tag-version --workspace=npm
+          fi
+
+          NEW_VERSION=$(node -p "require('./npm/package.json').version")
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+
+      # ---- Build binaries (all platforms) ----
+      - name: Build linux/amd64
         env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
+          GOOS: linux
+          GOARCH: amd64
         run: |
-          ext=""
-          if [ "$GOOS" = "windows" ]; then ext=".exe"; fi
-          output="dpndon-${GOOS}-${GOARCH}${ext}"
-          go build -ldflags="-s -w" -trimpath -o "dist/${output}" .
+          go build -ldflags="-s -w" -trimpath -o dist/dpndon-linux-amd64 .
+          cd dist && tar czf dpndon-linux-amd64.tar.gz dpndon-linux-amd64
 
-      - name: Package (unix)
-        if: matrix.goos != 'windows'
+      - name: Build linux/arm64
+        env:
+          GOOS: linux
+          GOARCH: arm64
         run: |
-          cd dist
-          tar czf "dpndon-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz" "dpndon-${{ matrix.goos }}-${{ matrix.goarch }}"
+          go build -ldflags="-s -w" -trimpath -o dist/dpndon-linux-arm64 .
+          cd dist && tar czf dpndon-linux-arm64.tar.gz dpndon-linux-arm64
 
-      - name: Package (windows)
-        if: matrix.goos == 'windows'
-        shell: bash
+      - name: Build darwin/amd64
+        env:
+          GOOS: darwin
+          GOARCH: amd64
         run: |
-          cd dist
-          7z a "dpndon-${{ matrix.goos }}-${{ matrix.goarch }}.zip" "dpndon-${{ matrix.goos }}-${{ matrix.goarch }}.exe"
+          go build -ldflags="-s -w" -trimpath -o dist/dpndon-darwin-amd64 .
+          cd dist && tar czf dpndon-darwin-amd64.tar.gz dpndon-darwin-amd64
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: dpndon-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: dist/*
+      - name: Build darwin/arm64
+        env:
+          GOOS: darwin
+          GOARCH: arm64
+        run: |
+          go build -ldflags="-s -w" -trimpath -o dist/dpndon-darwin-arm64 .
+          cd dist && tar czf dpndon-darwin-arm64.tar.gz dpndon-darwin-arm64
 
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: dist
-          merge-multiple: true
+      - name: Build windows/amd64
+        env:
+          GOOS: windows
+          GOARCH: amd64
+        run: |
+          go build -ldflags="-s -w" -trimpath -o dist/dpndon-windows-amd64.exe .
+          cd dist && 7z a dpndon-windows-amd64.zip dpndon-windows-amd64.exe
 
-      - name: Create Release
+      # ---- Publish to npm ----
+      - name: Publish to npm
+        run: |
+          cd npm
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # ---- Create GitHub Release ----
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
           files: |
             dist/*.tar.gz
             dist/*.zip
-          generate_release_notes: true
+
+      # ---- Push version commit and tag ----
+      - name: Push changes
+        run: |
+          git add npm/package.json
+          git commit -m "release: ${{ steps.version.outputs.tag }}"
+          git tag -a "${{ steps.version.outputs.tag }}" -m "Release ${{ steps.version.outputs.tag }}"
+          git push origin HEAD --follow-tags

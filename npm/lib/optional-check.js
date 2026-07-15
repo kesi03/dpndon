@@ -20,7 +20,7 @@ const key = `${platform}-${arch}`;
 
 if (!supported.includes(key)) {
   console.log(
-    `dpndon: platform ${key} is not prebuilt. You can build from source: https://github.com/dpndon/dpndon`
+    `dpndon: platform ${key} is not prebuilt. You can build from source: https://github.com/kesi03/dpndon`
   );
   process.exit(0);
 }
