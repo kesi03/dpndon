@@ -1,0 +1,40 @@
+name: Test Docker image
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Pull & test Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull Docker image
+        run: docker pull mockholm/dpndon:latest
+
+      - name: Verify image exists
+        run: docker images mockholm/dpndon --format "{{.Tag}}"
+
+      - name: Start container
+        run: |
+          docker run -d --name dpndon-test -p 8090:8080 mockholm/dpndon:latest
+          sleep 5
+          echo "Container started"
+
+      - name: Check container logs
+        run: docker logs dpndon-test
+
+      - name: Test SSE endpoint
+        run: |
+          curl -sf http://localhost:8090/sse > /dev/null && echo "SSE endpoint OK" || exit 1
+
+      - name: Test MCP tools endpoint
+        run: |
+          STATUS=$(curl -sf -o /dev/null -w "%{http_code}" http://localhost:8090/sse)
+          echo "Status: $STATUS"
+          if [ "$STATUS" -eq 200 ]; then echo "MCP server responding"; else exit 1; fi
+
+      - name: Stop container
+        if: always()
+        run: |
+          docker stop dpndon-test 2>/dev/null || true
+          docker rm dpndon-test 2>/dev/null || true

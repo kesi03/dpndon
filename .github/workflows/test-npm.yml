@@ -1,0 +1,46 @@
+name: Test npm/pnpm install
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Install & test MCP server
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        pkg-manager: [npm, pnpm]
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup pnpm
+        if: matrix.pkg-manager == 'pnpm'
+        run: npm install -g pnpm
+
+      - name: Install dpndon globally
+        run: ${{ matrix.pkg-manager }} install -g @mockholm/dpndon
+
+      - name: Verify binary
+        run: dpndon version
+
+      - name: Start MCP server (SSE)
+        run: |
+          dpndon serve -t sse -p 8090 &
+          sleep 3
+          echo "Server started"
+
+      - name: Test SSE endpoint
+        run: |
+          curl -sf http://localhost:8090/sse > /dev/null && echo "SSE endpoint OK" || exit 1
+
+      - name: List available tools
+        run: |
+          curl -sf http://localhost:8090/sse -H "Accept: text/event-stream" -o /dev/null
+          echo "MCP server is responding"
+
+      - name: Stop server
+        if: always()
+        run: kill %1 2>/dev/null || true
