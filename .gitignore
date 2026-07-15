@@ -12,3 +12,4 @@ npm/node_modules/
 npm/.npmrc
 nul
 vendor
+node_modules

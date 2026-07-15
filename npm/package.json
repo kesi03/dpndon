@@ -26,6 +26,9 @@
     "postinstall": "node lib/install.js",
     "preinstall": "node lib/optional-check.js"
   },
+  "dependencies": {
+    "pm2": "^5.4.0"
+  },
   "files": [
     "bin/",
     "lib/"

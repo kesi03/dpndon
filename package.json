@@ -1,0 +1,14 @@
+{
+  "name": "dpndon-dev",
+  "private": true,
+  "scripts": {
+    "start": "pm2 start ecosystem.config.cjs",
+    "stop": "pm2 stop dpndon",
+    "restart": "pm2 restart dpndon",
+    "logs": "pm2 logs dpndon",
+    "status": "pm2 status"
+  },
+  "devDependencies": {
+    "pm2": "^5.4.0"
+  }
+}

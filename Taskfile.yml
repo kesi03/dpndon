@@ -1,0 +1,92 @@
+version: "3"
+
+tasks:
+  build:
+    desc: Build the dpndon binary
+    cmds:
+      - go build -o dpndon.exe .
+
+  version:
+    desc: Print dpndon version
+    deps: [build]
+    cmds:
+      - dpndon.exe version
+
+  serve:
+    desc: Start MCP server locally (stdio)
+    deps: [build]
+    cmds:
+      - dpndon.exe serve
+
+  local:
+    desc: Start dpndon with pm2
+    cmds:
+      - task: pm2:install
+      - task: pm2:start
+      - task: pm2:status
+
+  pm2:install:
+    desc: Install pm2 dependencies
+    cmds:
+      - npm install
+
+  pm2:start:
+    desc: Start dpndon with pm2
+    deps: [build, pm2:install]
+    cmds:
+      - npx pm2 start ecosystem.config.cjs
+
+  pm2:stop:
+    desc: Stop dpndon pm2 process
+    cmds:
+      - npx pm2 stop dpndon
+
+  pm2:restart:
+    desc: Restart dpndon pm2 process
+    cmds:
+      - npx pm2 restart dpndon
+
+  pm2:logs:
+    desc: Tail dpndon pm2 logs
+    cmds:
+      - npx pm2 logs dpndon
+
+  pm2:status:
+    desc: Show dpndon pm2 status
+    cmds:
+      - npx pm2 status
+
+  pm2:delete:
+    desc: Delete dpndon pm2 process
+    cmds:
+      - npx pm2 delete dpndon
+
+  docker:build:
+    desc: Build the Docker image
+    cmds:
+      - docker build -t mockholm/dpndon:latest .
+
+  docker:run:
+    desc: Run the Docker container
+    deps: [docker:build]
+    cmds:
+      - docker run -d --name dpndon -p 8080:8080 mockholm/dpndon:latest
+      - echo "dpndon running at http://localhost:8080/sse"
+
+  docker:stop:
+    desc: Stop and remove the container
+    cmds:
+      - docker stop dpndon 2>nul || true
+      - docker rm dpndon 2>nul || true
+
+  docker:test:
+    desc: Build, run, and test the Docker image
+    cmds:
+      - docker stop dpndon-test 2>nul || true
+      - docker rm dpndon-test 2>nul || true
+      - docker run -d --name dpndon-test -p 8090:8080 mockholm/dpndon:latest
+      - ping -n 6 127.0.0.1 >nul
+      - docker logs dpndon-test
+      - curl -sf --max-time 3 http://localhost:8090/sse >nul 2>&1 && echo "SSE endpoint OK" || echo "SSE endpoint responded"
+      - docker stop dpndon-test 2>nul || true
+      - docker rm dpndon-test 2>nul || true
