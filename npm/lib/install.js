@@ -154,6 +154,7 @@ async function main() {
 
   // Try current version, then decrement until we find an existing release
   let version = RELEASE_TAG;
+  console.log(`dpndon: attempting to download version ${version}`);
   let lastErr;
   while (version) {
     try {
