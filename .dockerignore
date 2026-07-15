@@ -1,0 +1,7 @@
+.git
+dist
+npm/node_modules
+*.exe
+*.dll
+*.so
+*.dylib
