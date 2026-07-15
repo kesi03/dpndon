@@ -20,7 +20,7 @@
     "url": "https://github.com/kesi03/dpndon.git"
   },
   "bin": {
-    "dpndon": "bin/dpndon"
+    "dpndon": "bin/dpndon.js"
   },
   "scripts": {
     "postinstall": "node lib/install.js",

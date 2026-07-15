@@ -26,7 +26,12 @@ const ARCH_MAP = {
   arm64: "arm64",
 };
 
-function getDownloadURL() {
+function getArchiveName(version, os, goArch) {
+  const archiveExt = os === "windows" ? "zip" : "tar.gz";
+  return `dpndon-v${version}-${os}-${goArch}.${archiveExt}`;
+}
+
+function getDownloadURL(version) {
   const os = PLATFORM_MAP[platform];
   const goArch = ARCH_MAP[arch];
 
@@ -36,9 +41,28 @@ function getDownloadURL() {
     );
   }
 
-  const archiveExt = os === "windows" ? "zip" : "tar.gz";
-  const fileName = `dpndon-v${RELEASE_TAG}-${os}-${goArch}.${archiveExt}`;
-  return `https://github.com/${REPO}/releases/download/v${RELEASE_TAG}/${fileName}`;
+  const fileName = getArchiveName(version, os, goArch);
+  return `https://github.com/${REPO}/releases/download/v${version}/${fileName}`;
+}
+
+function decrementVersion(version) {
+  const parts = version.split(".").map(Number);
+  if (parts.length !== 3) return null;
+
+  if (parts[2] > 0) {
+    parts[2]--;
+  } else if (parts[1] > 0) {
+    parts[1]--;
+    parts[2] = 9;
+  } else if (parts[0] > 0) {
+    parts[0]--;
+    parts[1] = 9;
+    parts[2] = 9;
+  } else {
+    return null;
+  }
+
+  return parts.join(".");
 }
 
 function download(url) {
@@ -96,11 +120,25 @@ function extractZip(buffer, destDir) {
   }
 }
 
+async function tryDownload(version) {
+  const url = getDownloadURL(version);
+  console.log(`dpndon: downloading ${url}`);
+
+  const buffer = await download(url);
+  const binDir = path.join(__dirname, "..", "bin");
+  if (platform === "win32") {
+    extractZip(buffer, binDir);
+  } else {
+    extractTarGz(buffer, binDir);
+  }
+  chmodSync(path.join(binDir, BINARY_NAME), 0o755);
+  console.log("dpndon: installation complete");
+}
+
 async function main() {
   const binDir = path.join(__dirname, "..", "bin");
   const binPath = path.join(binDir, BINARY_NAME);
 
-  // Skip if binary already exists (e.g. from a previous install)
   if (existsSync(binPath)) {
     try {
       execSync(`"${binPath}" version`, { stdio: "ignore" });
@@ -114,25 +152,25 @@ async function main() {
     mkdirSync(binDir, { recursive: true });
   }
 
-  const url = getDownloadURL();
-  console.log(`dpndon: downloading ${url}`);
-
-  try {
-    const buffer = await download(url);
-    if (platform === "win32") {
-      extractZip(buffer, binDir);
-    } else {
-      extractTarGz(buffer, binDir);
+  // Try current version, then decrement until we find an existing release
+  let version = RELEASE_TAG;
+  let lastErr;
+  while (version) {
+    try {
+      await tryDownload(version);
+      return;
+    } catch (err) {
+      lastErr = err;
+      console.warn(`dpndon: v${version} not available, trying previous version...`);
+      version = decrementVersion(version);
     }
-    chmodSync(binPath, 0o755);
-    console.log("dpndon: installation complete");
-  } catch (err) {
-    console.error(`dpndon: failed to download binary: ${err.message}`);
-    console.error(
-      `dpndon: you can build from source: https://github.com/${REPO}#install`
-    );
-    process.exit(1);
   }
+
+  console.error(`dpndon: failed to download binary: ${lastErr.message}`);
+  console.error(
+    `dpndon: you can build from source: https://github.com/${REPO}#install`
+  );
+  process.exit(1);
 }
 
 main();
