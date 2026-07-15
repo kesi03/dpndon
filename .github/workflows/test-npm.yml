@@ -22,8 +22,13 @@ jobs:
           corepack enable
           corepack prepare pnpm@9.0.0 --activate
 
-      - name: Install dpndon globally
+      - name: Install @mockholm/dpndon globally
+        if: matrix.pkg-manager == 'pnpm'
         run: ${{ matrix.pkg-manager }} add -g @mockholm/dpndon
+
+      - name: Install @mockholm/dpndon globally
+        if: matrix.pkg-manager == 'npm'
+        run: ${{ matrix.pkg-manager }} install -g @mockholm/dpndon
 
       - name: Verify binary
         run: dpndon version
