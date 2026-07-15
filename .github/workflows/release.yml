@@ -59,41 +59,46 @@ jobs:
         env:
           GOOS: linux
           GOARCH: amd64
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
-          go build -ldflags="-s -w" -trimpath -o dist/dpndon-linux-amd64 .
-          cd dist && tar czf dpndon-linux-amd64.tar.gz dpndon-linux-amd64
+          go build -ldflags="-s -w" -trimpath -o dist/dpndon-${TAG}-linux-amd64 .
+          cd dist && tar czf dpndon-${TAG}-linux-amd64.tar.gz dpndon-${TAG}-linux-amd64
 
       - name: Build linux/arm64
         env:
           GOOS: linux
           GOARCH: arm64
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
-          go build -ldflags="-s -w" -trimpath -o dist/dpndon-linux-arm64 .
-          cd dist && tar czf dpndon-linux-arm64.tar.gz dpndon-linux-arm64
+          go build -ldflags="-s -w" -trimpath -o dist/dpndon-${TAG}-linux-arm64 .
+          cd dist && tar czf dpndon-${TAG}-linux-arm64.tar.gz dpndon-${TAG}-linux-arm64
 
       - name: Build darwin/amd64
         env:
           GOOS: darwin
           GOARCH: amd64
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
-          go build -ldflags="-s -w" -trimpath -o dist/dpndon-darwin-amd64 .
-          cd dist && tar czf dpndon-darwin-amd64.tar.gz dpndon-darwin-amd64
+          go build -ldflags="-s -w" -trimpath -o dist/dpndon-${TAG}-darwin-amd64 .
+          cd dist && tar czf dpndon-${TAG}-darwin-amd64.tar.gz dpndon-${TAG}-darwin-amd64
 
       - name: Build darwin/arm64
         env:
           GOOS: darwin
           GOARCH: arm64
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
-          go build -ldflags="-s -w" -trimpath -o dist/dpndon-darwin-arm64 .
-          cd dist && tar czf dpndon-darwin-arm64.tar.gz dpndon-darwin-arm64
+          go build -ldflags="-s -w" -trimpath -o dist/dpndon-${TAG}-darwin-arm64 .
+          cd dist && tar czf dpndon-${TAG}-darwin-arm64.tar.gz dpndon-${TAG}-darwin-arm64
 
       - name: Build windows/amd64
         env:
           GOOS: windows
           GOARCH: amd64
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
-          go build -ldflags="-s -w" -trimpath -o dist/dpndon-windows-amd64.exe .
-          cd dist && 7z a dpndon-windows-amd64.zip dpndon-windows-amd64.exe
+          go build -ldflags="-s -w" -trimpath -o dist/dpndon-${TAG}-windows-amd64.exe .
+          cd dist && 7z a dpndon-${TAG}-windows-amd64.zip dpndon-${TAG}-windows-amd64.exe
 
       # ---- Publish to npm ----
       - name: Publish to npm

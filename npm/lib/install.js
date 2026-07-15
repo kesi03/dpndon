@@ -37,7 +37,7 @@ function getDownloadURL() {
   }
 
   const archiveExt = os === "windows" ? "zip" : "tar.gz";
-  const fileName = `dpndon-${os}-${goArch}.${archiveExt}`;
+  const fileName = `dpndon-v${RELEASE_TAG}-${os}-${goArch}.${archiveExt}`;
   return `https://github.com/${REPO}/releases/download/v${RELEASE_TAG}/${fileName}`;
 }
 
