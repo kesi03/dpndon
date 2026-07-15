@@ -7,7 +7,7 @@ dpndon
 *.so
 *.dylib
 .env
-npm/bin/
+!npm/bin/
 npm/node_modules/
 npm/.npmrc
 nul
