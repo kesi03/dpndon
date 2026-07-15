@@ -1,5 +1,5 @@
 {
-  "name": "dpndon",
+  "name": "@mockholm/dpndon",
   "version": "0.1.0",
   "description": "Dependency security scanner MCP server — wraps OSV Scanner, Trivy, and Dependency-Track",
   "keywords": [
