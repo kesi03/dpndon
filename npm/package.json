@@ -1,0 +1,36 @@
+{
+  "name": "dpndon",
+  "version": "0.1.0",
+  "description": "Dependency security scanner MCP server — wraps OSV Scanner, Trivy, and Dependency-Track",
+  "keywords": [
+    "security",
+    "vulnerability",
+    "scanner",
+    "mcp",
+    "osv",
+    "trivy",
+    "dependency-track",
+    "sbom",
+    "sca"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kesi03/dpndon.git"
+  },
+  "bin": {
+    "dpndon": "bin/dpndon"
+  },
+  "scripts": {
+    "postinstall": "node lib/install.js",
+    "preinstall": "node lib/optional-check.js"
+  },
+  "files": [
+    "bin/",
+    "lib/"
+  ],
+  "engines": {
+    "node": ">=16"
+  }
+}

@@ -1,0 +1,14 @@
+dpndon.exe
+dpndon
+/dist/
+/dist/
+*.exe
+*.dll
+*.so
+*.dylib
+.env
+npm/bin/
+npm/node_modules/
+npm/.npmrc
+nul
+vendor
